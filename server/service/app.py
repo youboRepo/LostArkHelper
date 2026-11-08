@@ -8,9 +8,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlsplit, parse_qs
-from automation import OperationLock, run, save_state, error_info
+from concurrent.futures import ThreadPoolExecutor
+from automation import OperationLock, manual_run
 import store
 import auth
+import accounts
 import helper
 import import_link as importer
 
@@ -20,28 +22,23 @@ PORT = int(os.environ.get('ARK_PORT', '18745'))
 PUBLIC_ORIGIN = os.environ.get('ARK_PUBLIC_ORIGIN', 'https://lostarkhelper.dpdns.org').rstrip('/')
 COOKIE = 'ark_session'
 
-# 读取当前账号的游戏凭据；只供后端内部调用，不能把返回值直接输出到网页或日志。
-def read_config(root):
-    obj = json.loads((root / 'config-dashboard.json').read_text(encoding='utf-8'))
-    if not isinstance(obj, dict) or not isinstance(obj.get('form'), dict) or not isinstance(obj.get('cookie'), str):
-        raise ValueError('invalid')
-    return obj
-
 # 向官方接口查询签到和任务，向网页仅返回展示所需的字段；此函数不提交签到或领奖。
-def status(root):
-    if not (root / 'config-dashboard.json').exists():
-        return {'configured': False, 'source': None}
+def status(acct):
     try:
-        config = read_config(root)
+        config = accounts.read_config(acct['root'])
         signed = helper.sign_status(config)
         tasks = helper.tasks(config)
         cleaned = [{'id': t['id'], 'name': str(t.get('name', '未知任务'))[:100],
                     'type': t['type'], 'status': t['status'], 'exp': t.get('exp')} for t in tasks]
-        return {'configured': True, 'source': '我的游戏账号', 'signed': signed, 'tasks': cleaned,
+        return {'configured': True, 'account': acct['id'], 'source': acct['label'], 'signed': signed, 'tasks': cleaned,
                 'time': datetime.now(store.TZ).strftime('%H:%M')}
     except Exception:
-        return {'configured': True, 'source': '我的游戏账号',
+        return {'configured': True, 'account': acct['id'], 'source': acct['label'],
                 'error': '查询失败，请更新登录凭据或检查活动是否有效。'}
+
+# 账号列表只含展示信息，不含任何凭据。
+def public_accounts(user_root):
+    return [{k: a[k] for k in ('id', 'label', 'role', 'server', 'area')} for a in accounts.list_accounts(user_root)]
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
@@ -108,15 +105,27 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/schedule':
                 value = store.settings(root)
                 return self.reply(200, dict(value, timezone='Asia/Shanghai', next_run=store.next_run(value)))
+            query = parse_qs(urlsplit(self.path).query)
+            if path == '/api/accounts':
+                return self.reply(200, {'accounts': public_accounts(root), 'max': accounts.MAX_ACCOUNTS})
             if path == '/api/history':
                 try:
-                    before = int(parse_qs(urlsplit(self.path).query).get('before', ['0'])[0])
+                    before = int(query.get('before', ['0'])[0])
                     if before < 0: raise ValueError()
                 except ValueError:
                     return self.reply(400, {'error': '分页参数无效'})
-                return self.reply(200, store.history(root, before))
+                wanted = query.get('account', [None])[0]
+                if wanted is not None and not accounts.valid_id(wanted):
+                    return self.reply(400, {'error': '账号编号无效'})
+                return self.reply(200, store.history(root, before, wanted))
             if path == '/api/status':
-                return self.reply(200, status(root))
+                items = accounts.list_accounts(root)
+                if not items:
+                    return self.reply(200, {'configured': False, 'source': None})
+                acct = accounts.get(root, query.get('account', [items[0]['id']])[0])
+                if not acct:
+                    return self.reply(404, {'error': '账号不存在'})
+                return self.reply(200, status(acct))
             return self.reply(404, {'error': 'not found'})
         if path in ('/', '/login', '/register'):
             path = '/index.html'
@@ -179,52 +188,115 @@ class Handler(BaseHTTPRequestHandler):
             auth.logout(ROOT, self.session_token())
             return self.reply(200, {'message': '已退出登录。'}, self.cookie('', expires=True))
         root = auth.user_root(ROOT, user)
-        lock = OperationLock(root)
-        if not lock.acquire():
-            return self.reply(409, {'error': '你的账号已有操作正在进行，请稍后再试。'})
+        if path == '/api/schedule':
+            try:
+                value = store.settings(root, obj)
+            except ValueError:
+                return self.reply(400, {'error': '时间设置无效，请检查分钟及 HH:MM 格式。'})
+            return self.reply(200, dict(value, timezone='Asia/Shanghai', next_run=store.next_run(value), message='我的定时设置已保存。'))
+        if path in ('/api/import', '/api/accounts/add', '/api/accounts/remove', '/api/accounts/rename'):
+            return self.manage(path, root, obj)
+        if path not in ('/api/sign', '/api/claim', '/api/run'):
+            return self.reply(404, {'error': 'not found'})
+        items = accounts.list_accounts(root)
+        if not items:
+            return self.reply(400, {'error': '请先导入自己的游戏账号。'})
+        wanted = obj.get('account', items[0]['id'])
+        if wanted == 'all':
+            targets = items
+        else:
+            acct = accounts.get(root, wanted)
+            if not acct:
+                return self.reply(404, {'error': '账号不存在'})
+            targets = [acct]
+        sign, claim = path in ('/api/sign', '/api/run'), path in ('/api/claim', '/api/run')
+        # 各账号独立加锁、独立记录；多账号时并发执行（上限 4），互不影响。
+        with ThreadPoolExecutor(max_workers=min(4, len(targets))) as pool:
+            results = list(pool.map(lambda a: manual_run(root, a, helper, sign, claim, capacity_root=ROOT), targets))
+        code = 200 if all(c == 200 for c, _ in results) else next(c for c, _ in results if c != 200)
+        message = results[0][1] if len(results) == 1 else '\n'.join(
+            '{}：{}'.format(a['label'], m) for a, (_, m) in zip(targets, results))
+        return self.reply(code, {'message': message} if code == 200 else {'error': message})
+
+    # 账号绑定管理：导入/更新 token、新增、移除、改名。凭据只写入对应账号目录。
+    def manage(self, path, root, obj):
+        admin = OperationLock(root, 'accounts.lock')
+        if not admin.acquire():
+            return self.reply(409, {'error': '账号管理操作正在进行，请稍后再试。'})
         try:
-            if path == '/api/schedule':
+            if path in ('/api/accounts/remove', '/api/accounts/rename'):
+                acct = accounts.get(root, obj.get('account'))
+                if not acct:
+                    return self.reply(404, {'error': '账号不存在'})
+                if path.endswith('rename'):
+                    accounts.write_meta(acct['root'], accounts.clean_label(obj.get('label'), acct['label']))
+                    return self.reply(200, {'message': '账号名称已更新。'})
+                lock = OperationLock(acct['root'])
+                if not lock.acquire():
+                    return self.reply(409, {'error': '该账号正在执行操作，请稍后再移除。'})
                 try:
-                    value = store.settings(root, obj)
-                except ValueError:
-                    return self.reply(400, {'error': '时间设置无效，请检查分钟及 HH:MM 格式。'})
-                return self.reply(200, dict(value, timezone='Asia/Shanghai', next_run=store.next_run(value), message='我的定时设置已保存。'))
-            if path == '/api/import':
-                if not isinstance(obj.get('url'), str):
-                    return self.reply(400, {'error': '请填写分享链接。'})
-                file = root / 'config-dashboard.json'
-                if file.exists() and obj.get('replace') is not True:
-                    return self.reply(409, {'error': '已有 token，请勾选确认更新后再提交。'})
+                    accounts.remove(root, acct['id'])
+                except accounts.PendingOperation as exc:
+                    return self.reply(409, {'error': str(exc)})
+                finally:
+                    lock.release()
+                return self.reply(200, {'message': '已移除账号「{}」及其登录凭据；历史记录保留。'.format(acct['label'])})
+            if not isinstance(obj.get('url'), str):
+                return self.reply(400, {'error': '请填写分享链接。'})
+            try:
+                config, info = importer.parse_link(obj['url'])
+            except ValueError:
+                return self.reply(400, {'error': '分享链接无效，请从官方 App 复制支持的活动链接。'})
+            names = ' / '.join(str(info.get(k) or '未提供')[:100] for k in ('area', 'server', 'role'))
+            default_label = (info.get('role') or '').strip()[:30]
+            if path == '/api/accounts/add':
+                dup = accounts.find_duplicate(root, config)
+                if dup:
+                    if dup.get('quarantined'):
+                        return self.reply(409, {'error': '该角色存在已隔离的待确认操作，请先由管理员核实。'})
+                    return self.reply(409, {'error': '该游戏角色已绑定为「{}」，请在该账号上更新 token。'.format(dup['label'])})
                 try:
-                    config, info = importer.parse_link(obj['url'])
-                except ValueError:
-                    return self.reply(400, {'error': '分享链接无效，请从官方 App 复制支持的活动链接。'})
-                if file.exists():
-                    old = read_config(root)
+                    aid = accounts.next_id(root)
+                except ValueError as exc:
+                    return self.reply(400, {'error': str(exc)})
+                label = accounts.clean_label(obj.get('label'), default_label or '账号 ' + aid)
+                accounts.save(root, aid, config, label, info)
+                return self.reply(201, {'message': '已添加账号「{}」：{}。请先查询核对，再启用定时任务。'.format(label, names), 'account': aid})
+            # /api/import：更新已有账号的 token（须确认且为同一角色），或首次导入账号 1。
+            aid = obj.get('account', accounts.FIRST)
+            if not accounts.valid_id(aid):
+                return self.reply(400, {'error': '账号编号无效'})
+            acct = accounts.get(root, aid)
+            if not acct and aid != accounts.FIRST:
+                return self.reply(404, {'error': '账号不存在'})
+            lock = OperationLock(accounts.account_root(root, aid))
+            if not lock.acquire():
+                return self.reply(409, {'error': '该账号正在执行操作，请稍后再更新。'})
+            try:
+                if acct:
+                    if obj.get('replace') is not True:
+                        return self.reply(409, {'error': '已有 token，请勾选确认更新后再提交。'})
+                    old = accounts.read_config(acct['root'])
                     if any(str(old['form'].get(k)) != str(config['form'].get(k)) for k in ('user_id', 'openid', 'sRoleld')):
                         return self.reply(409, {'error': '仅支持更新同一游戏账号和角色的 token，不能在此切换账号。'})
-                save_state(file, config)
-                names = ' / '.join(str(info.get(k) or '未提供')[:100] for k in ('area', 'server', 'role'))
-                return self.reply(200, {'message': '我的 token 已保存：' + names + '。请先查询核对，再启用定时任务。'})
-            if path not in ('/api/sign', '/api/claim', '/api/run'):
-                return self.reply(404, {'error': 'not found'})
-            if not (root / 'config-dashboard.json').exists():
-                return self.reply(400, {'error': '请先导入自己的游戏账号。'})
-            report = {'trigger': 'manual'}
-            run_id = store.begin(root, None)
-            report['run_id'] = run_id
-            try:
-                code = run(helper, read_config(root), root, report=report,
-                           allow_sign=path in ('/api/sign', '/api/run'), allow_claim=path in ('/api/claim', '/api/run'))
-                store.update(root, run_id, report, 'success' if code == 0 else 'error')
-                return self.reply(200 if code == 0 else 409, {'message': ('执行成功：' + ('本次签到成功' if report.get('sign') == 'signed_now' else '今日已签到，跳过签到') + '；领取奖励 {} 项。'.format(len(report.get('claimed', [])))) if code == 0 else report.get('message', '执行失败，请查看运行记录。')})
-            except Exception as exc:
-                report.setdefault('errors', []).append(error_info(exc, report.get('stage', '手动操作')))
-                report['message'] = '；'.join(e['summary'] for e in report['errors'])
-                store.update(root, run_id, report, 'error')
-                return self.reply(500, {'error': report['message']})
+                    accounts.save(root, aid, config, acct['label'], info)
+                else:
+                    dup = accounts.find_duplicate(root, config)
+                    if dup:
+                        if dup.get('quarantined'):
+                            return self.reply(409, {'error': '该角色存在已隔离的待确认操作，请先由管理员核实。'})
+                        return self.reply(409, {'error': '该游戏角色已绑定为「{}」。'.format(dup['label'])})
+                    # 旧导入入口仅允许全新用户创建账号 1，已发放编号不得重用。
+                    if accounts.issued_floor(root) != 0:
+                        return self.reply(409, {'error': '账号 1 已使用过，请通过添加账号导入。'})
+                    if accounts.next_id(root) != accounts.FIRST:
+                        raise ValueError('账号编号分配异常')
+                    accounts.save(root, aid, config, default_label or '账号 ' + aid, info)
+            finally:
+                lock.release()
+            return self.reply(200, {'message': '我的 token 已保存：' + names + '。请先查询核对，再启用定时任务。'})
         finally:
-            lock.release()
+            admin.release()
 
 if __name__ == '__main__':
     os.umask(0o077)
