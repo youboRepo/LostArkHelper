@@ -40,8 +40,14 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(config['form']['login_type'], 'qc')
             self.assertEqual(info, dict(server='卡丹', area='卢佩恩', role='测试角色'))
 
-    def test_case_alias_duplicates_and_conflicting_access_rejected(self):
-        for suffix in ('&acctype=qc', '&TOKEN=ExampleToken', '&USERID=999', '&ACCESSTOKEN=ExampleAccess'):
+    def test_identical_duplicates_accepted_without_changing_values(self):
+        expected = import_link.parse_link(sample_link())
+        for suffix in ('&acctype=qc', '&TOKEN=ExampleToken', '&ACCESSTOKEN=ExampleAccess', '&accType=qc&ACCTYPE=qc', '&token=%45xampleToken'):
+            with self.subTest(suffix=suffix):
+                self.assertEqual(import_link.parse_link(sample_link() + suffix), expected)
+
+    def test_case_alias_conflicts_and_conflicting_access_rejected(self):
+        for suffix in ('&acctype=wx', '&TOKEN=exampletoken', '&USERID=999', '&ACCESSTOKEN=DifferentAccess', '&acctype='):
             with self.subTest(suffix=suffix), self.assertRaises(ValueError):
                 import_link.parse_link(sample_link() + suffix)
         for updates in (dict(accType='wx'), dict(access_token='OtherAccess'), dict(token='invalid value')):
@@ -101,7 +107,7 @@ class ImportTests(unittest.TestCase):
                 # 同一账号导入有效新凭据后清除自己的记录，不改其他账号，也不自动领奖。
                 guard.write_text('{"action": 2}')
                 with patch.object(helper, 'request') as request:
-                    status, data = call(dict(url=sample_link(token='NewToken'), replace=True))
+                    status, data = call(dict(url=sample_link(token='NewToken') + '&acctype=qc', replace=True))
                     request.assert_not_called()
                 self.assertEqual(status, 200)
                 self.assertTrue(data['pending_cleared'])

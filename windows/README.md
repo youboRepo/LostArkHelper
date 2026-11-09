@@ -1,4 +1,4 @@
-# 命运方舟助手 Windows 本地版 · v0.3.2
+# 命运方舟助手 Windows 本地版 · v0.3.3
 
 支持 Windows 10/11 x64，以“本地服务 + 浏览器工作台”运行。GitHub Release 提供完整 ZIP 压缩包，内含 Python 运行时和已构建网页，使用者无需安装 Python 或 Node.js。无需注册账号，游戏请求由本机直接发送到腾讯官方接口。
 

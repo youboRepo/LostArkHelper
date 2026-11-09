@@ -2,7 +2,7 @@
   "WFWorkflowClientVersion": "4040",
   "WFWorkflowMinimumClientVersion": 900,
   "WFWorkflowMinimumClientVersionString": "900",
-  "WFWorkflowName": "LostArkHelper-iPhone-v0.3.2",
+  "WFWorkflowName": "LostArkHelper-iPhone-v0.3.3",
   "WFWorkflowActions": [
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.comment",
@@ -299,8 +299,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]token=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]token=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:token)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "1342FD65-88FB-4282-9F3E-FBDC04518215",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -369,7 +369,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：token。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：token。请重新获取完整链接。",
         "UUID": "DEBAB78F-C287-4FA7-954B-953270B003B9"
       }
     },
@@ -490,8 +490,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]userId=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]userId=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:userId)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "C4B147C1-EE4F-43E2-9288-4C22E62015D1",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -560,7 +560,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：userId。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：userId。请重新获取完整链接。",
         "UUID": "D21AD3C0-B708-42A3-8FFA-8BF2D184A92D"
       }
     },
@@ -681,8 +681,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]appOpenid=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]appOpenid=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:appOpenid)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "E0A1BD71-A4A7-47B9-8373-0C6187D789E2",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -751,7 +751,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：appOpenid。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：appOpenid。请重新获取完整链接。",
         "UUID": "680C1375-643E-4EC3-8FE5-88AF523BAD3C"
       }
     },
@@ -872,8 +872,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]appid=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]appid=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:appid)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "A6809FBD-D70B-47D1-8BF9-A68C26215882",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -942,7 +942,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：appid。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：appid。请重新获取完整链接。",
         "UUID": "1FEE48B9-471F-4ED3-98CD-CDA0B6B4E17F"
       }
     },
@@ -1063,8 +1063,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]roleId=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]roleId=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:roleId)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "037EFAAE-CD39-451C-95A2-187F06D86386",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1133,7 +1133,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：roleId。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：roleId。请重新获取完整链接。",
         "UUID": "FE23C5FD-2677-4547-B440-86A6E9962AD1"
       }
     },
@@ -1254,8 +1254,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]serverId=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]serverId=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:serverId)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "AEDAA304-A928-41BC-8369-0D64668F4456",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1324,7 +1324,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：serverId。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：serverId。请重新获取完整链接。",
         "UUID": "7A87B718-C9FD-4A77-9C82-DA9CAB393F15"
       }
     },
@@ -1445,8 +1445,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]areaId=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]areaId=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:areaId)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "01B44436-1122-4A07-9791-0768DE8107CD",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1515,7 +1515,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：areaId。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：areaId。请重新获取完整链接。",
         "UUID": "0B0C7C1A-35E9-4E99-9290-1E2A22EF1FE0"
       }
     },
@@ -1636,8 +1636,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]uin=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]uin=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:uin)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "189371F1-88FF-4DA1-8462-814A12544047",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1706,7 +1706,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：uin。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：uin。请重新获取完整链接。",
         "UUID": "8437170C-B5C4-4677-A786-5EF9F5C3AE60"
       }
     },
@@ -1827,8 +1827,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]acctype=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]acctype=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:acctype)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "FCD798AC-712E-49CB-B357-340FDFBBE616",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1897,7 +1897,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接缺少或重复参数：acctype。请重新获取完整链接。",
+        "WFTextActionText": "链接缺少参数或同名参数的值不一致：acctype。请重新获取完整链接。",
         "UUID": "3B266550-3E0D-4C87-91DE-938875B895A1"
       }
     },
@@ -3098,8 +3098,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]accessToken=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]accessToken=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:accessToken)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "63CD3355-86E7-47D3-9B23-9B3D307AF1AB",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -3168,7 +3168,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接参数重复：accessToken",
+        "WFTextActionText": "链接同名参数的值不一致：accessToken",
         "UUID": "DF016806-A0D5-469E-B416-CFE5B7033170"
       }
     },
@@ -3289,8 +3289,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?i)(?<=[?&]access_token=)[^&#]*",
-        "WFMatchTextCaseSensitive": false,
+        "WFMatchTextPattern": "(?i:(?<=[?&]access_token=))([^&#]*)(?=[&#]|$)(?![^#]*[?&](?i:access_token)=\\1(?:[&#]|$))",
+        "WFMatchTextCaseSensitive": true,
         "UUID": "95B1A3EA-E3A6-4A02-B901-A67C0DE5B2FB",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -3359,7 +3359,7 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
       "WFWorkflowActionParameters": {
-        "WFTextActionText": "链接参数重复：access_token",
+        "WFTextActionText": "链接同名参数的值不一致：access_token",
         "UUID": "3172592E-4E8C-4B31-8284-575FA80DB33E"
       }
     },

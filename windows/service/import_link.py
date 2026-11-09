@@ -18,15 +18,15 @@ def parse_link(link):
     if u.scheme != 'https' or u.hostname not in ALLOWED or u.username or u.password or u.port not in (None, 443):
         raise ValueError('仅接受 lostark.qq.com 或 bbs.lostark.qq.com 的 HTTPS 分享链接')
     # 官方不同活动使用 accType/acctype 等不同大小写；仅统一参数名，凭据值原样保留。
-    # 合并大小写别名后再检查重复，不能用后一个值静默覆盖前一个值。
+    # 合并大小写别名后检查值是否一致，不能用后一个值静默覆盖冲突值。
     q = {}
     for key, values in parse_qs(u.query, keep_blank_values=True).items():
         q.setdefault(key.lower(), []).extend(values)
-    # 参数必须唯一且非空，拒绝相同参数出现多次造成解析歧义。
+    # 官方链接可能重复携带同一字段；同值重复可合并，缺失、空值或冲突值拒绝。
     def one(name):
         values = q.get(name.lower(), [])
-        if len(values) != 1 or not values[0].strip():
-            raise ValueError('链接缺少参数或参数重复：' + name)
+        if not values or len(set(values)) != 1 or not values[0].strip():
+            raise ValueError('链接缺少参数或同名参数的值不一致：' + name)
         return values[0]
     v = {k: one(k) for k in FIELDS}
     if v['appid'] != '102037747':

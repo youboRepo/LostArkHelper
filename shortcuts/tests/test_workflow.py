@@ -112,8 +112,11 @@ class Tests(unittest.TestCase):
    r=Runner();base,query=r.link.split('?',1)
    r.link=base+'?'+urllib.parse.urlencode([(transform(k),v) for k,v in urllib.parse.parse_qsl(query)])
    r.run();self.assertTrue(r.signed)
- def test_case_alias_duplicates_rejected(self):
-  for suffix in ('&accType=qc','&TOKEN=dummy','&USERID=456','&ACCESSTOKEN=dummy'):
+ def test_identical_duplicates_accepted(self):
+  for suffix in ('&accType=qc','&TOKEN=dummy','&ACCESSTOKEN=dummy','&acctype=qc&ACCTYPE=qc','&token=dummy&token=dummy'):
+   r=Runner();r.link+=suffix;r.run();self.assertTrue(r.signed)
+ def test_case_alias_conflicts_rejected(self):
+  for suffix in ('&accType=wx','&TOKEN=Dummy','&USERID=456','&ACCESSTOKEN=other','&acctype='):
    r=Runner();r.link+=suffix
    with self.assertRaises(Halt):r.run()
    self.assertEqual(r.calls,[])

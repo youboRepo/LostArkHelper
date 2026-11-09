@@ -1,6 +1,6 @@
 # 命运方舟助手
 
-v0.3.2，活动版本 2611。包含服务器、Windows 本地版、Linux 本地版及 iPhone 单快捷指令。Windows/Linux 解压即可运行，无需安装 Python，也无需注册助手账号；服务器版保留多用户登录和独立计划。
+v0.3.3，活动版本 2611。包含服务器、Windows 本地版、Linux 本地版及 iPhone 单快捷指令。Windows/Linux 解压即可运行，无需安装 Python，也无需注册助手账号；服务器版保留多用户登录和独立计划。
 
 完整操作说明见：[命运方舟助手四端使用指南](docs/使用指南.md)。其中包含四端选择、活动链接导入、定时设置、数据位置、更新和安全排查。
 
@@ -8,10 +8,10 @@ v0.3.2，活动版本 2611。包含服务器、Windows 本地版、Linux 本地�
 
 | 版本 | 下载文件 | 使用方式 |
 | --- | --- | --- |
-| Windows x64 | LostArkHelper-Windows-x64-v0.3.2.zip | 完整解压，双击目录中的 LostArkHelper.exe |
-| Linux x64 | LostArkHelper-Linux-x64-v0.3.2.tar.gz | 解压，运行 ./start.sh，浏览器打开工作台 |
-| 服务器 | LostArkHelper-Server-v0.3.2.tar.gz | Python 服务源码、网页成品及 systemd 单元，见包内 README |
-| iPhone | LostArkHelper-iPhone-v0.3.2.shortcut | 在 iPhone 上下载并用快捷指令 App 导入 |
+| Windows x64 | LostArkHelper-Windows-x64-v0.3.3.zip | 完整解压，双击目录中的 LostArkHelper.exe |
+| Linux x64 | LostArkHelper-Linux-x64-v0.3.3.tar.gz | 解压，运行 ./start.sh，浏览器打开工作台 |
+| 服务器 | LostArkHelper-Server-v0.3.3.tar.gz | Python 服务源码、网页成品及 systemd 单元，见包内 README |
+| iPhone | LostArkHelper-iPhone-v0.3.3.shortcut | 在 iPhone 上下载并用快捷指令 App 导入 |
 
 Windows/Linux 服务保持后台运行；关闭网页不退出，可在工作台停止。Windows 在工作台设置用户登录自启；Linux 使用安装脚本配置 systemd 用户服务。Linux 成品在 Ubuntu 22.04 x64 构建，需要 glibc 2.35+，不适用于 Alpine/musl 或 ARM。
 
@@ -29,7 +29,7 @@ v0.2.0 需要先手动升级至带更新入口的版本，之后才能使用此�
 
 任务 6–11 的领取参数依据统一接口推断，尚无逐项成功抓包，不能声称已经真实领奖验证。它们与已收录任务共用 partnergettaskreward2611、task_id、type=1。只在官方返回 status=1 时领取；不会代替玩家完成副本、查看活动规则或组队条件。未知、重复、未完成或已领取任务跳过。
 
-签到成功后刷新任务，可在同次执行领取刚解锁的累计奖励。提交前后重新查询；异常或无法确认成功时立即停止。服务器和本地版持久保存 pending-operation.json，后续先查询确认，结果仍不明确则提示更新 token。成功保存同一游戏账号、同一角色的凭据后清除该账号的待确认限制，下次执行重新查询官方状态。链接参数名兼容大小写（如 accType/acctype），凭据值保持原样，重复参数仍被拒绝。手机在当前执行中停止；不同端之间没有共享锁，请选择一个端为同一账号执行自动计划。
+签到成功后刷新任务，可在同次执行领取刚解锁的累计奖励。提交前后重新查询；异常或无法确认成功时立即停止。服务器和本地版持久保存 pending-operation.json，后续先查询确认，结果仍不明确则提示更新 token。成功保存同一游戏账号、同一角色的凭据后清除该账号的待确认限制，下次执行重新查询官方状态。链接参数名兼容大小写（如 accType/acctype），凭据值保持原样，同名参数值相同可合并，值冲突则拒绝。手机在当前执行中停止；不同端之间没有共享锁，请选择一个端为同一账号执行自动计划。
 
 ## 源码与构建
 
