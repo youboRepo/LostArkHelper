@@ -2,13 +2,13 @@
   "WFWorkflowClientVersion": "4040",
   "WFWorkflowMinimumClientVersion": 900,
   "WFWorkflowMinimumClientVersionString": "900",
-  "WFWorkflowName": "LostArkHelper-iPhone-v0.3.3",
+  "WFWorkflowName": "LostArkHelper-iPhone-v0.3.4",
   "WFWorkflowActions": [
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.comment",
       "WFWorkflowActionParameters": {
         "UUID": "84642DFC-CC39-4271-B4B8-E4AD96E2955C",
-        "WFCommentActionText": "阅读说明：本指令不依赖其他快捷指令。首次从文件读取活动链接；缺失时询问一次，解析校验通过后保存。链接含凭据，不要分享。"
+        "WFCommentActionText": "阅读说明：本指令不依赖其他快捷指令。首次从文件读取活动链接；缺失时询问一次，解析并通过 QQ 登录有效性校验后保存。每次运行均先校验凭据；过期停止并提示更新。链接含凭据，不要分享。"
       }
     },
     {
@@ -4523,6 +4523,910 @@
           }
         },
         "UUID": "CE2E12FD-A468-4C9D-AEE4-49E576B11D5B"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.comment",
+      "WFWorkflowActionParameters": {
+        "WFCommentActionText": "QQ OAuth 登录有效性校验 v1",
+        "UUID": "1EA58FE2-74A4-4EAD-8E5A-34611F175678"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "Variable",
+            "VariableName": "配置"
+          }
+        },
+        "WFDictionaryKey": "form.access_token",
+        "WFGetDictionaryValueType": "Value",
+        "UUID": "84F27B35-06C4-4DC5-82FB-7B6DB934A0F3"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
+      "WFWorkflowActionParameters": {
+        "WFURL": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "https://graph.qq.com/oauth2.0/me?access_token=￼&fmt=json",
+            "attachmentsByRange": {
+              "{46, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "84F27B35-06C4-4DC5-82FB-7B6DB934A0F3",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "WFHTTPMethod": "GET",
+        "Advanced": true,
+        "UUID": "DB2ECA24-3DA9-4F8C-BBD8-A85B09D2BDD7"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "DB2ECA24-3DA9-4F8C-BBD8-A85B09D2BDD7",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "2AB84BAE-0911-4E40-9718-965C4D343646"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
+      "WFWorkflowActionParameters": {
+        "text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "2AB84BAE-0911-4E40-9718-965C4D343646",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "WFMatchTextPattern": "(?s)\\{.*\\}",
+        "WFMatchTextCaseSensitive": true,
+        "UUID": "7A1D138A-1447-4B80-B83F-72B07EBBF1FD"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.count",
+      "WFWorkflowActionParameters": {
+        "Input": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "7A1D138A-1447-4B80-B83F-72B07EBBF1FD",
+            "OutputName": "结果"
+          }
+        },
+        "WFCountType": "Items",
+        "UUID": "CCF186D0-2BCE-4C79-B240-42DFE4ECB1CF"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.number",
+      "WFWorkflowActionParameters": {
+        "WFNumberActionNumber": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "CCF186D0-2BCE-4C79-B240-42DFE4ECB1CF",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "996C6863-DFD9-4848-9769-F393E8187D77"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "Type": "Variable",
+          "Variable": {
+            "WFSerializationType": "WFTextTokenAttachment",
+            "Value": {
+              "Type": "ActionOutput",
+              "OutputUUID": "996C6863-DFD9-4848-9769-F393E8187D77",
+              "OutputName": "结果"
+            }
+          }
+        },
+        "WFCondition": 5,
+        "GroupingIdentifier": "88C670E5-BD9A-4259-BF5E-E48F98C51253",
+        "WFControlFlowMode": 0,
+        "WFNumberValue": 1,
+        "UUID": "3E77557C-B8CD-450B-9751-B876FE743792"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "QQ 登录校验返回格式异常，本次停止。请稍后重试。",
+            "attachmentsByRange": {}
+          }
+        },
+        "UUID": "C8B553CE-5EC9-4AEA-B75B-F574CAF5D27C"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+      "WFWorkflowActionParameters": {
+        "Text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "C8B553CE-5EC9-4AEA-B75B-F574CAF5D27C",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "51E12B69-5D38-496F-AACC-8378734A3A63"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+      "WFWorkflowActionParameters": {
+        "WFResult": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "C8B553CE-5EC9-4AEA-B75B-F574CAF5D27C",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "71FC46FE-1AF5-46DF-8125-092349D464E1"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "88C670E5-BD9A-4259-BF5E-E48F98C51253",
+        "WFControlFlowMode": 2,
+        "UUID": "7F5E5C6D-728A-47C3-AF76-4878FF03FFF8"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "7A1D138A-1447-4B80-B83F-72B07EBBF1FD",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "CE68B411-7A45-445B-A95A-51317FEE4B30"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.detect.dictionary",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "CE68B411-7A45-445B-A95A-51317FEE4B30",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "0EF6A84F-E8A6-4FAD-90F6-81D612410A17"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "0EF6A84F-E8A6-4FAD-90F6-81D612410A17",
+            "OutputName": "结果"
+          }
+        },
+        "WFDictionaryKey": "error",
+        "WFGetDictionaryValueType": "Value",
+        "UUID": "E244D975-6B6E-471B-8C29-371A2C3BDD47"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "E244D975-6B6E-471B-8C29-371A2C3BDD47",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "D11AEBD5-B99E-49CE-9D02-DE8D25C08211"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
+      "WFWorkflowActionParameters": {
+        "text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "D11AEBD5-B99E-49CE-9D02-DE8D25C08211",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "WFMatchTextPattern": ".+",
+        "WFMatchTextCaseSensitive": true,
+        "UUID": "E4EFD1FE-C398-4408-B6D6-073E764E9FC0"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.count",
+      "WFWorkflowActionParameters": {
+        "Input": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "E4EFD1FE-C398-4408-B6D6-073E764E9FC0",
+            "OutputName": "结果"
+          }
+        },
+        "WFCountType": "Items",
+        "UUID": "D105457B-163D-4596-B391-1877608D40D0"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.number",
+      "WFWorkflowActionParameters": {
+        "WFNumberActionNumber": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "D105457B-163D-4596-B391-1877608D40D0",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "C9505ADB-0612-49F6-9977-66FB850A825E"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "Type": "Variable",
+          "Variable": {
+            "WFSerializationType": "WFTextTokenAttachment",
+            "Value": {
+              "Type": "ActionOutput",
+              "OutputUUID": "C9505ADB-0612-49F6-9977-66FB850A825E",
+              "OutputName": "结果"
+            }
+          }
+        },
+        "WFCondition": 5,
+        "GroupingIdentifier": "F3969EED-5555-44B9-B301-44B1BC042091",
+        "WFControlFlowMode": 0,
+        "WFNumberValue": 0,
+        "UUID": "2C9B64CB-8715-4ADC-B7F2-4706DFDF9E68"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "QQ 登录凭据已过期或失效。请删除 iCloud Drive/Shortcuts/lostark-local-link.txt，重新打开官方 App 获取新的完整活动链接后再运行。本次未签到或领奖。",
+            "attachmentsByRange": {}
+          }
+        },
+        "UUID": "71953AC8-E2B5-40AD-9A82-567E81F224DB"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+      "WFWorkflowActionParameters": {
+        "Text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "71953AC8-E2B5-40AD-9A82-567E81F224DB",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "49E8D84F-AEC0-4666-9463-64A042329F68"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+      "WFWorkflowActionParameters": {
+        "WFResult": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "71953AC8-E2B5-40AD-9A82-567E81F224DB",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "C80E3E35-D534-484D-8A5D-38896272C64A"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "F3969EED-5555-44B9-B301-44B1BC042091",
+        "WFControlFlowMode": 2,
+        "UUID": "8DA4732C-5285-4E14-9CF6-DE77CB526EF4"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "0EF6A84F-E8A6-4FAD-90F6-81D612410A17",
+            "OutputName": "结果"
+          }
+        },
+        "WFDictionaryKey": "client_id",
+        "WFGetDictionaryValueType": "Value",
+        "UUID": "FB5FC38B-152F-4688-9B9C-3B4F1C7B3E5A"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "FB5FC38B-152F-4688-9B9C-3B4F1C7B3E5A",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "6707E313-FC27-4392-9639-B2A85F450848"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
+      "WFWorkflowActionParameters": {
+        "text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "6707E313-FC27-4392-9639-B2A85F450848",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "WFMatchTextPattern": "^[A-Za-z0-9_-]+$",
+        "WFMatchTextCaseSensitive": true,
+        "UUID": "EB41C6FB-FB96-49F2-9536-8598B3AAD839"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.count",
+      "WFWorkflowActionParameters": {
+        "Input": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "EB41C6FB-FB96-49F2-9536-8598B3AAD839",
+            "OutputName": "结果"
+          }
+        },
+        "WFCountType": "Items",
+        "UUID": "C675A537-A7B1-4CB3-A014-2C45D4A9C9F7"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.number",
+      "WFWorkflowActionParameters": {
+        "WFNumberActionNumber": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "C675A537-A7B1-4CB3-A014-2C45D4A9C9F7",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "A9BE5500-F5AD-4DEA-A41A-DC6B20A09041"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "Type": "Variable",
+          "Variable": {
+            "WFSerializationType": "WFTextTokenAttachment",
+            "Value": {
+              "Type": "ActionOutput",
+              "OutputUUID": "A9BE5500-F5AD-4DEA-A41A-DC6B20A09041",
+              "OutputName": "结果"
+            }
+          }
+        },
+        "WFCondition": 5,
+        "GroupingIdentifier": "1FC79FDE-DF0A-4217-A421-7EB05E16C809",
+        "WFControlFlowMode": 0,
+        "WFNumberValue": 1,
+        "UUID": "9DD1B842-C4A9-4E22-AF32-55E41717C439"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "QQ 登录校验返回格式异常，本次停止。请稍后重试。",
+            "attachmentsByRange": {}
+          }
+        },
+        "UUID": "36FFD4CF-A0C5-4471-A678-86176295097B"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+      "WFWorkflowActionParameters": {
+        "Text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "36FFD4CF-A0C5-4471-A678-86176295097B",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "9E6536D3-51B5-43FF-9A28-4652CFAEC740"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+      "WFWorkflowActionParameters": {
+        "WFResult": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "36FFD4CF-A0C5-4471-A678-86176295097B",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "F51C61B4-F405-41BC-BE69-F41F9EE2A0E6"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "1FC79FDE-DF0A-4217-A421-7EB05E16C809",
+        "WFControlFlowMode": 2,
+        "UUID": "D16ADDFE-2FE4-471A-88D9-81665C1C363A"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "Variable",
+            "VariableName": "配置"
+          }
+        },
+        "WFDictionaryKey": "form.appid",
+        "WFGetDictionaryValueType": "Value",
+        "UUID": "1DD7454B-BC6D-48F1-A70B-1859FD3265AA"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "Type": "Variable",
+          "Variable": {
+            "WFSerializationType": "WFTextTokenAttachment",
+            "Value": {
+              "Type": "ActionOutput",
+              "OutputUUID": "6707E313-FC27-4392-9639-B2A85F450848",
+              "OutputName": "结果"
+            }
+          }
+        },
+        "WFCondition": 5,
+        "GroupingIdentifier": "D51FA179-7A5D-4FC8-AF81-49CEBFA164DF",
+        "WFControlFlowMode": 0,
+        "WFConditionalActionString": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "1DD7454B-BC6D-48F1-A70B-1859FD3265AA",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "5ECB9969-6CBD-4947-9034-BE22DD706FC0"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "QQ 登录凭据与链接中的应用或账号不一致。请删除 iCloud Drive/Shortcuts/lostark-local-link.txt，重新获取完整链接。",
+            "attachmentsByRange": {}
+          }
+        },
+        "UUID": "AA76F2CA-C51B-43FE-B118-01E215DEC3D9"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+      "WFWorkflowActionParameters": {
+        "Text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "AA76F2CA-C51B-43FE-B118-01E215DEC3D9",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "7143A109-84BB-415F-A53D-3210CE193D2C"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+      "WFWorkflowActionParameters": {
+        "WFResult": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "AA76F2CA-C51B-43FE-B118-01E215DEC3D9",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "F1C1B592-00B9-4F66-B035-598DDFA9B9A4"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "D51FA179-7A5D-4FC8-AF81-49CEBFA164DF",
+        "WFControlFlowMode": 2,
+        "UUID": "73CB21FD-2D14-4F63-A23D-C39E4D31046A"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "0EF6A84F-E8A6-4FAD-90F6-81D612410A17",
+            "OutputName": "结果"
+          }
+        },
+        "WFDictionaryKey": "openid",
+        "WFGetDictionaryValueType": "Value",
+        "UUID": "8FAE5026-BCFA-4273-A5F2-553F995F2606"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "8FAE5026-BCFA-4273-A5F2-553F995F2606",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "ED4D76A1-3CA9-4EDE-9488-FCAF00EB1083"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
+      "WFWorkflowActionParameters": {
+        "text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "ED4D76A1-3CA9-4EDE-9488-FCAF00EB1083",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "WFMatchTextPattern": "^[A-Za-z0-9_-]+$",
+        "WFMatchTextCaseSensitive": true,
+        "UUID": "32E7EFFB-ECA9-439B-B409-3AAA160DF4C1"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.count",
+      "WFWorkflowActionParameters": {
+        "Input": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "32E7EFFB-ECA9-439B-B409-3AAA160DF4C1",
+            "OutputName": "结果"
+          }
+        },
+        "WFCountType": "Items",
+        "UUID": "0168B9FA-2898-4E92-8DD5-AC9EB3ECD0E8"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.number",
+      "WFWorkflowActionParameters": {
+        "WFNumberActionNumber": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "0168B9FA-2898-4E92-8DD5-AC9EB3ECD0E8",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "A7700DA9-11C9-45F0-984B-00E77EA3178C"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "Type": "Variable",
+          "Variable": {
+            "WFSerializationType": "WFTextTokenAttachment",
+            "Value": {
+              "Type": "ActionOutput",
+              "OutputUUID": "A7700DA9-11C9-45F0-984B-00E77EA3178C",
+              "OutputName": "结果"
+            }
+          }
+        },
+        "WFCondition": 5,
+        "GroupingIdentifier": "CDCDC891-380A-4B73-9E15-32B0E502F66E",
+        "WFControlFlowMode": 0,
+        "WFNumberValue": 1,
+        "UUID": "6A2952F1-DF08-40B7-B750-5D6C7C1F6CBC"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "QQ 登录校验返回格式异常，本次停止。请稍后重试。",
+            "attachmentsByRange": {}
+          }
+        },
+        "UUID": "9D4A1ECB-6A0A-4BCD-BFCD-1EB2F4694F7F"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+      "WFWorkflowActionParameters": {
+        "Text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "9D4A1ECB-6A0A-4BCD-BFCD-1EB2F4694F7F",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "38E0B6FA-19BA-4E25-BD57-E06B3D0665D4"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+      "WFWorkflowActionParameters": {
+        "WFResult": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "9D4A1ECB-6A0A-4BCD-BFCD-1EB2F4694F7F",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "84E4C8F7-05C0-48F4-AB6C-5486BFB3F5FD"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "CDCDC891-380A-4B73-9E15-32B0E502F66E",
+        "WFControlFlowMode": 2,
+        "UUID": "68C734EA-A633-49EB-994C-C079E9E47BA1"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getvalueforkey",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "Variable",
+            "VariableName": "配置"
+          }
+        },
+        "WFDictionaryKey": "form.openid",
+        "WFGetDictionaryValueType": "Value",
+        "UUID": "3BBD9890-558A-45EC-9750-A0ABDE1E4CD6"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFInput": {
+          "Type": "Variable",
+          "Variable": {
+            "WFSerializationType": "WFTextTokenAttachment",
+            "Value": {
+              "Type": "ActionOutput",
+              "OutputUUID": "ED4D76A1-3CA9-4EDE-9488-FCAF00EB1083",
+              "OutputName": "结果"
+            }
+          }
+        },
+        "WFCondition": 5,
+        "GroupingIdentifier": "293EEAE7-DE9E-4459-A17D-AB0486AC8E3B",
+        "WFControlFlowMode": 0,
+        "WFConditionalActionString": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "3BBD9890-558A-45EC-9750-A0ABDE1E4CD6",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "FA774736-4C65-499F-8715-4BE6958720A5"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettext",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "QQ 登录凭据与链接中的应用或账号不一致。请删除 iCloud Drive/Shortcuts/lostark-local-link.txt，重新获取完整链接。",
+            "attachmentsByRange": {}
+          }
+        },
+        "UUID": "CBAB3EE0-B038-40F2-9461-26ED92058AA7"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.showresult",
+      "WFWorkflowActionParameters": {
+        "Text": {
+          "WFSerializationType": "WFTextTokenString",
+          "Value": {
+            "string": "￼",
+            "attachmentsByRange": {
+              "{0, 1}": {
+                "Type": "ActionOutput",
+                "OutputUUID": "CBAB3EE0-B038-40F2-9461-26ED92058AA7",
+                "OutputName": "结果"
+              }
+            }
+          }
+        },
+        "UUID": "908F381A-97A9-4DFE-895A-A83C5EA22473"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.exit",
+      "WFWorkflowActionParameters": {
+        "WFResult": {
+          "WFSerializationType": "WFTextTokenAttachment",
+          "Value": {
+            "Type": "ActionOutput",
+            "OutputUUID": "CBAB3EE0-B038-40F2-9461-26ED92058AA7",
+            "OutputName": "结果"
+          }
+        },
+        "UUID": "244A5B6D-7451-42F5-89D3-BF2B59EF1E8E"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "GroupingIdentifier": "293EEAE7-DE9E-4459-A17D-AB0486AC8E3B",
+        "WFControlFlowMode": 2,
+        "UUID": "E3FBDE63-44B0-4518-B178-7EF9CBD43710"
       }
     },
     {

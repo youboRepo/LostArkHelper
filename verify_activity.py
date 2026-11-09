@@ -14,7 +14,7 @@ workflow = json.loads((ROOT/'shortcuts/source/workflow.json').read_text())
 claims = []
 for action in workflow['WFWorkflowActions']:
     p = action['WFWorkflowActionParameters']
-    if action['WFWorkflowActionIdentifier'].endswith('.downloadurl') and 'partnergettaskreward' in p.get('WFURL', ''):
+    if action['WFWorkflowActionIdentifier'].endswith('.downloadurl') and isinstance(p.get('WFURL'), str) and 'partnergettaskreward' in p['WFURL']:
         assert p['WFURL'].endswith(manifest['version'])
         values = {x['WFKey']['Value']['string']: x['WFValue']['Value']['string']
                   for x in p['WFFormValues']['Value']['WFDictionaryFieldValueItems']

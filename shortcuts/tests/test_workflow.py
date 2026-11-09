@@ -24,7 +24,17 @@ class Runner:
   if t=='WFDictionaryFieldValue':return {self.value(i['WFKey']):self.value(i['WFValue']) for i in v['WFDictionaryFieldValueItems']}
   raise AssertionError(t)
  def api(self,p):
-  ep=p['WFURL'].split('/')[-1];self.calls.append(ep);self.trace.append(ep)
+  url=self.value(p['WFURL'])
+  if url.startswith('https://graph.qq.com/oauth2.0/me?'):
+   self.oauth_calls=getattr(self,'oauth_calls',0)+1
+   assert url=='https://graph.qq.com/oauth2.0/me?access_token=dummy&fmt=json'
+   assert p.get('WFHTTPMethod')=='GET' and 'WFHTTPHeaders' not in p
+   if self.fault=='oauth_network':raise Halt('QQ login check unavailable')
+   if self.fault=='oauth_expired':return {'error':100014,'error_description':'access token is expired'}
+   if self.fault=='oauth_bad_json':return 'not json'
+   result={'client_id':'other' if self.fault=='oauth_app_mismatch' else '102037747','openid':'other' if self.fault=='oauth_identity_mismatch' else 'dummy'}
+   return 'callback( '+json.dumps(result)+' );' if self.fault=='oauth_callback' else result
+  ep=url.split('/')[-1];self.calls.append(ep);self.trace.append(ep)
   assert p['WFURL'].startswith('https://api.bbs.lostark.qq.com/')
   form=self.value(p['WFFormValues']);assert form['token']=='dummy';assert 'access_token=dummy;' in self.value(p['WFHTTPHeaders'])['Cookie'];assert 'uin=o0000123456' in self.value(p['WFHTTPHeaders'])['Cookie']
   if ep=='partnersignlist2611':data={'is_sign':self.signed} if self.fault!='bad_sign' else {'is_sign':'false'}
@@ -93,6 +103,17 @@ class Runner:
    else:raise AssertionError(kind)
    self.o[p['UUID']]=r;self.last=r;i+=1
 class Tests(unittest.TestCase):
+ def test_expired_or_unverifiable_credentials_never_saved_or_submitted(self):
+  for fault in ('oauth_expired','oauth_network','oauth_bad_json','oauth_app_mismatch','oauth_identity_mismatch'):
+   for persisted in (False,True):
+    with self.subTest(fault=fault,persisted=persisted):
+     r=Runner(fault=fault);r.persisted=persisted
+     with self.assertRaises(Halt):r.run()
+     self.assertEqual(r.saved,0);self.assertEqual(r.calls,[]);self.assertEqual(r.claim_ids,[])
+ def test_login_preflight_each_run_and_callback(self):
+  r=Runner(fault='oauth_callback');r.run();r.run()
+  self.assertEqual(r.oauth_calls,2)
+
  def test_existing_config(self):
   r=Runner();r.run();self.assertEqual(r.prompts,0);self.assertEqual(r.saved,0)
  def test_first_run(self):

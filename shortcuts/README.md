@@ -1,12 +1,12 @@
 # iPhone 一键签到领奖
 
-发布文件为 `releases/LostArkHelper-iPhone-v0.3.3.shortcut`。这是 iPhone「快捷指令」使用的单个指令，运行过程直接访问官方活动接口，不依赖服务器、Windows 或其他快捷指令。使用 macOS 的 `shortcuts sign` 仅为生成苹果签名，不代表需要在 Mac 上运行。
+发布文件为 `releases/LostArkHelper-iPhone-v0.3.4.shortcut`。这是 iPhone「快捷指令」使用的单个指令，运行过程直接访问官方活动接口，不依赖服务器、Windows 或其他快捷指令。使用 macOS 的 `shortcuts sign` 仅为生成苹果签名，不代表需要在 Mac 上运行。
 
 ## 使用
 
 1. 在 iPhone 下载发布页的 `.shortcut` 文件，使用「快捷指令」打开并添加。
 2. 首次运行粘贴已登录、已选择角色的官方活动完整链接。指令自动解析登录和角色参数，不要求手工填写每个请求参数。参数名兼容大小写，如 `accType` / `acctype`；凭据值不会改写，同名参数值相同可合并，值冲突则拒绝。
-3. 校验通过后，链接保存在 `iCloud Drive/Shortcuts/lostark-local-link.txt`。允许系统提示的文件和网络访问权限；后续运行直接读取保存内容。
+3. 通过 QQ 官方登录有效性与账号身份校验后，链接保存在 `iCloud Drive/Shortcuts/lostark-local-link.txt`。允许系统提示的文件和网络访问权限；后续运行直接读取保存内容。
 4. 指令查询今日签到状态，未签到则签到并查询确认；再查询任务，仅对最新状态为可领取的任务领取奖励，每次提交后再次查询确认。
 
 活动链接包含登录凭据，不能分享。凭据过期或更换角色时，删除保存的 `lostark-local-link.txt`，重新运行并粘贴新的链接。任务未完成时会跳过。不要同时运行多份；提交后若报错或提示未确认，请先在官方 App 中核实结果。
@@ -26,6 +26,7 @@
 - `source/workflow.json`：不含真实凭据的完整动作图，是构建入口。动作内保留中文说明和 iPhone 类型适配。
 - `build.py`：检查动作 UUID、输出引用、控制流，再生成二进制 plist；在 macOS 上调用苹果签名工具。
 - `tests/test_workflow.py`：执行动作图的模拟器，覆盖所有 13 个任务、首次保存链接、重复任务、异常停止、未知任务跳过、签到解锁累计任务、每次领取前后查询等。
+- `tools/add_login_validation.py`：将 QQ 登录校验插入保存和游戏请求之前，可重复运行。
 - `tools/expand_task_catalog.py`：从现有完整领取块扩展任务目录，重新分配内部 UUID；可重复运行。`tools/history/` 仅保留历史修复脚本供理解演变过程，不能作为当前构建入口。
 
 ```sh
@@ -35,4 +36,4 @@ python3 shortcuts/build.py
 
 跨平台只生成未签名文件可使用 `python3 shortcuts/build.py --unsigned-only`。该文件不能冒充已签名的 iPhone 发布文件。
 
-本版通过动作模拟测试并完成苹果签名；本轮没有向真实游戏接口发送请求，也没有完成此次最终文件的 iPhone 真机导入及完整领取验收。
+本版通过动作模拟测试并完成苹果签名。每次运行均先检查 QQ 凭据有效性，过期或校验失败时停止，首次运行失败不会保存链接。本轮已在服务器验证任务 1、2 真实领取成功；最终 iPhone 文件尚未做真机导入与完整领取验收。

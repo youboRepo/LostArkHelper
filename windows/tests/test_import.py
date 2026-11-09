@@ -80,6 +80,7 @@ class ImportTests(unittest.TestCase):
             saved = [original]
             configured = [True]
             stack.enter_context(patch.object(app, 'ROOT', root))
+            login = stack.enter_context(patch.object(helper, 'validate_login', return_value=None))
             stack.enter_context(patch.object(app.Handler, 'current_user', return_value=dict(id=1, username='test', legacy=1)))
             stack.enter_context(patch.object(app, 'read_config', side_effect=lambda _: saved[0]))
             stack.enter_context(patch.object(credentials, 'exists', side_effect=lambda _: configured[0]))
@@ -144,6 +145,17 @@ class ImportTests(unittest.TestCase):
                     self.assertEqual(call(body)[0], expected)
                     self.assertEqual(save.call_count, before)
                     self.assertTrue(guard.exists())
+                # 过期或网络校验失败不能写入新凭据，也不能清除待确认记录。
+                for kind, expected in (('auth_invalid', 400), ('auth_mismatch', 400), ('auth_check', 503)):
+                    guard.write_text('{"action": 2}')
+                    login.side_effect = helper.ApiError('请更新 token', kind)
+                    before = save.call_count
+                    status, data = call(dict(url=sample_link(), replace=True))
+                    self.assertEqual(status, expected)
+                    self.assertIn('更新 token', data['error'])
+                    self.assertEqual(save.call_count, before)
+                    self.assertTrue(guard.exists())
+                login.side_effect = None
                 # 磁盘/凭据保存失败时保留保护。
                 save.side_effect = OSError('simulated write failure')
                 self.assertEqual(call(dict(url=sample_link(), replace=True))[0], 500)

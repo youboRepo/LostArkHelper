@@ -29,7 +29,7 @@ def expand(workflow):
     for left, right in zip(starts, starts[1:] + [end]):
         block = actions[left:right]
         claims = [a['WFWorkflowActionParameters'] for a in block
-                  if a['WFWorkflowActionParameters'].get('WFURL', '').endswith('/partnergettaskreward2611')]
+                  if isinstance(a['WFWorkflowActionParameters'].get('WFURL'), str) and a['WFWorkflowActionParameters']['WFURL'].endswith('/partnergettaskreward2611')]
         assert len(claims) == 1
         form = claims[0]['WFFormValues']['Value']['WFDictionaryFieldValueItems']
         task_id = int(next(f['WFValue']['Value']['string'] for f in form
@@ -54,7 +54,7 @@ def expand(workflow):
             p = a['WFWorkflowActionParameters']
             if p.get('WFNumberValue') == 5:
                 p['WFNumberValue'] = task_id
-            if p.get('WFURL', '').endswith('/partnergettaskreward2611'):
+            if isinstance(p.get('WFURL'), str) and p['WFURL'].endswith('/partnergettaskreward2611'):
                 for field in p['WFFormValues']['Value']['WFDictionaryFieldValueItems']:
                     if field['WFKey']['Value']['string'] == 'task_id':
                         field['WFValue']['Value']['string'] = str(task_id)

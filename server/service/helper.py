@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """方舟最佳搭档任务助手：默认只查询，领取须显式启用。"""
 import argparse
+import hashlib
+import time
 import socket
 import re
 import json
@@ -46,8 +48,65 @@ def safe_message(data, config):
     return ''.join(c for c in text if c.isprintable())[:160]
 
 
+# QQ 登录过期时，活动任务接口可能仍返回 code=200、status=0，不能据此显示未完成。
+# 先用 QQ 官方 OAuth 身份查询校验 access_token；成功结果按凭据摘要短暂缓存。
+_LOGIN_CACHE = {}
+LOGIN_CACHE_SECONDS = 60
+
+
+def validate_login(config, force=False):
+    form = config.get('form', {})
+    access, appid, openid = (form.get(k) for k in ('access_token', 'appid', 'openid'))
+    if any(not isinstance(v, str) or not v for v in (access, appid, openid)):
+        raise ApiError('QQ 登录凭据不完整，请在账号管理更新 token。', 'auth_invalid', 'qq_oauth_me')
+    key = hashlib.sha256(json.dumps([access, appid, openid]).encode()).hexdigest()
+    now = time.monotonic()
+    if not force and _LOGIN_CACHE.get(key, 0) > now:
+        return
+    # 不向 OAuth 主机发送活动 Cookie；固定 HTTPS 主机并拒绝重定向。
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+    url = 'https://graph.qq.com/oauth2.0/me?' + urllib.parse.urlencode(
+        {'access_token': access, 'fmt': 'json'})
+    req = urllib.request.Request(url, headers={'Accept': 'application/json'})
+    try:
+        opener = urllib.request.build_opener(NoRedirect, urllib.request.ProxyHandler({}))
+        with opener.open(req, timeout=15) as response:
+            raw = response.read(16385)
+        if len(raw) > 16384:
+            raise ValueError()
+        text = raw.decode('utf-8').strip()
+        callback = re.fullmatch(r'callback\s*\(\s*(\{.*\})\s*\)\s*;?', text, re.S)
+        data = json.loads(callback.group(1) if callback else text)
+        if not isinstance(data, dict):
+            raise ValueError()
+    except (OSError, urllib.error.URLError, ValueError):
+        _LOGIN_CACHE.pop(key, None)
+        raise ApiError('QQ 登录校验暂时不可用，请稍后重试；本次停止查询和提交。',
+                       'auth_check', 'qq_oauth_me') from None
+    if 'error' in data or data.get('ret', 0) != 0:
+        _LOGIN_CACHE.pop(key, None)
+        code = data.get('error', data.get('ret'))
+        code = code if type(code) is int else None
+        raise ApiError('QQ 登录凭据已过期或失效，请从官方 App 获取新活动链接，在账号管理更新 token。',
+                       'auth_invalid', 'qq_oauth_me', code)
+    if any(not isinstance(data.get(k), str) or not data[k] for k in ('client_id', 'openid')):
+        _LOGIN_CACHE.pop(key, None)
+        raise ApiError('QQ 登录校验返回格式异常，请稍后重试；本次停止查询和提交。',
+                       'auth_check', 'qq_oauth_me')
+    if data.get('client_id') != appid or data.get('openid') != openid:
+        _LOGIN_CACHE.pop(key, None)
+        raise ApiError('QQ 登录凭据与链接中的应用或账号不一致，请重新获取完整链接。',
+                       'auth_mismatch', 'qq_oauth_me')
+    if len(_LOGIN_CACHE) >= 256:
+        _LOGIN_CACHE.clear()
+    _LOGIN_CACHE[key] = time.monotonic() + LOGIN_CACHE_SECONDS
+
+
 # 官方 API 的唯一请求出口。合并通用凭据与本次参数，编码为表单；拒绝重定向，验证外层和业务层返回码。
 def request(config, endpoint, extra=None):
+    validate_login(config)
     form = dict(config['form'])
     form.update(extra or {})
     body = urllib.parse.urlencode(form).encode('utf-8')

@@ -45,6 +45,9 @@ def status(root):
                     'type': t['type'], 'status': t['status'], 'exp': t.get('exp')} for t in tasks]
         return {'configured': True, 'source': '我的游戏账号', 'signed': signed, 'tasks': cleaned,
                 'time': datetime.now(store.TZ).strftime('%H:%M')}
+    except helper.ApiError as exc:
+        return {'configured': True, 'source': '我的游戏账号',
+                'error': str(exc), 'needs_token_update': exc.kind in ('auth_invalid', 'auth_mismatch')}
     except Exception:
         return {'configured': True, 'source': '我的游戏账号',
                 'error': '查询失败，请更新登录凭据或检查活动是否有效。'}
@@ -236,6 +239,12 @@ class Handler(BaseHTTPRequestHandler):
                     old = read_config(root)
                     if any(str(old['form'].get(k)) != str(config['form'].get(k)) for k in ('user_id', 'openid', 'sRoleld')):
                         return self.reply(409, {'error': '仅支持更新同一游戏账号和角色的 token，不能在此切换账号。'})
+                # 不能把过期凭据保存成“更新成功”，也不能据此清除待确认记录。
+                try:
+                    helper.validate_login(config, force=True)
+                except helper.ApiError as exc:
+                    return self.reply(400 if exc.kind in ('auth_invalid', 'auth_mismatch') else 503,
+                                      {'error': str(exc), 'needs_token_update': exc.kind in ('auth_invalid', 'auth_mismatch')})
                 credentials.write(root, config)
                 # 已持有该账号的操作锁，且凭据保存成功；允许用新凭据重新查询后执行。
                 # 校验失败、身份不符或写入失败时不会执行到这里，原待确认记录仍保留。
