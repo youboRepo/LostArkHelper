@@ -79,7 +79,9 @@ class AutomationTests(unittest.TestCase):
 
     def test_uncertain_claim_stops_and_blocks_next_run(self):
         api = FakeAPI([task(6, 1), task(7, 1)], uncertain=True)
-        self.assertEqual(automation.run(api, {}, self.root), 1)
+        report = {}
+        self.assertEqual(automation.run(api, {}, self.root, report=report), 1)
+        self.assertIn('更新 token', report['message'])
         self.assertEqual(len(api.calls), 1)
         self.assertEqual(json.loads((self.root/'pending-operation.json').read_text())['action'], 6)
         with self.assertRaises(helper.ApiError):

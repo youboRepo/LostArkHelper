@@ -107,6 +107,16 @@ class Tests(unittest.TestCase):
    r=Runner();r.persisted=False;r.link=change(r.link)
    with self.assertRaises(Halt):r.run()
    self.assertEqual(r.calls,[]);self.assertEqual(r.saved,0)
+ def test_parameter_names_case_insensitive(self):
+  for transform in (str.upper,str.lower,str.swapcase):
+   r=Runner();base,query=r.link.split('?',1)
+   r.link=base+'?'+urllib.parse.urlencode([(transform(k),v) for k,v in urllib.parse.parse_qsl(query)])
+   r.run();self.assertTrue(r.signed)
+ def test_case_alias_duplicates_rejected(self):
+  for suffix in ('&accType=qc','&TOKEN=dummy','&USERID=456','&ACCESSTOKEN=dummy'):
+   r=Runner();r.link+=suffix
+   with self.assertRaises(Halt):r.run()
+   self.assertEqual(r.calls,[])
  def test_ios_action_schema(self):
   for a in json.loads(P.read_text())['WFWorkflowActions']:
    k=a['WFWorkflowActionIdentifier'];p=a['WFWorkflowActionParameters']

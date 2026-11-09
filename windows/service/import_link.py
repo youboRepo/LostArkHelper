@@ -17,10 +17,14 @@ def parse_link(link):
     u = urlsplit(link.strip())
     if u.scheme != 'https' or u.hostname not in ALLOWED or u.username or u.password or u.port not in (None, 443):
         raise ValueError('仅接受 lostark.qq.com 或 bbs.lostark.qq.com 的 HTTPS 分享链接')
-    q = parse_qs(u.query, keep_blank_values=True)
+    # 官方不同活动使用 accType/acctype 等不同大小写；仅统一参数名，凭据值原样保留。
+    # 合并大小写别名后再检查重复，不能用后一个值静默覆盖前一个值。
+    q = {}
+    for key, values in parse_qs(u.query, keep_blank_values=True).items():
+        q.setdefault(key.lower(), []).extend(values)
     # 参数必须唯一且非空，拒绝相同参数出现多次造成解析歧义。
     def one(name):
-        values = q.get(name, [])
+        values = q.get(name.lower(), [])
         if len(values) != 1 or not values[0].strip():
             raise ValueError('链接缺少参数或参数重复：' + name)
         return values[0]
@@ -29,7 +33,7 @@ def parse_link(link):
         raise ValueError('appid 与本助手的 QQ 登录应用不一致')
     if one('acctype') != 'qc':
         raise ValueError('目前只支持已验证的 QQ 登录（acctype=qc）')
-    access_values = [value for key in ('accessToken', 'access_token') for value in q.get(key, []) if value]
+    access_values = [one(key) for key in ('accessToken', 'access_token') if key.lower() in q]
     if not access_values or len(set(access_values)) != 1:
         raise ValueError('accessToken 缺失或不同字段的值不一致')
     access = access_values[0]
@@ -46,7 +50,7 @@ def parse_link(link):
         ('access_token',access),('acctype','qc'),('appid',v['appid']),('openid',v['appOpenid']),
         ('accessToken',access),('appId',v['appid']),('appOpenId',v['appOpenid']),
         ('appOpenid',v['appOpenid']),('openId',v['appOpenid']),('uin','o'+v['uin'].zfill(10))])
-    return {'cookie':cookie, 'form':form}, {'server':q.get('serverName',[''])[0], 'area':q.get('areaName',[''])[0], 'role':q.get('roleName',[''])[0]}
+    return {'cookie':cookie, 'form':form}, {'server':q.get('servername',[''])[0], 'area':q.get('areaname',[''])[0], 'role':q.get('rolename',[''])[0]}
 
 def main():
     parser=argparse.ArgumentParser(description='从 QQ 登录后的分享链接创建新配置；不访问网络、不覆盖现有文件')

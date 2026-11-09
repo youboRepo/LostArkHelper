@@ -1,11 +1,11 @@
 # iPhone 一键签到领奖
 
-发布文件为 `releases/LostArkHelper-iPhone-v0.3.1.shortcut`。这是 iPhone「快捷指令」使用的单个指令，运行过程直接访问官方活动接口，不依赖服务器、Windows 或其他快捷指令。使用 macOS 的 `shortcuts sign` 仅为生成苹果签名，不代表需要在 Mac 上运行。
+发布文件为 `releases/LostArkHelper-iPhone-v0.3.2.shortcut`。这是 iPhone「快捷指令」使用的单个指令，运行过程直接访问官方活动接口，不依赖服务器、Windows 或其他快捷指令。使用 macOS 的 `shortcuts sign` 仅为生成苹果签名，不代表需要在 Mac 上运行。
 
 ## 使用
 
 1. 在 iPhone 下载发布页的 `.shortcut` 文件，使用「快捷指令」打开并添加。
-2. 首次运行粘贴已登录、已选择角色的官方活动完整链接。指令自动解析登录和角色参数，不要求手工填写每个请求参数。
+2. 首次运行粘贴已登录、已选择角色的官方活动完整链接。指令自动解析登录和角色参数，不要求手工填写每个请求参数。参数名兼容大小写，如 `accType` / `acctype`；凭据值不会改写，不同大小写的重复同名参数仍被拒绝。
 3. 校验通过后，链接保存在 `iCloud Drive/Shortcuts/lostark-local-link.txt`。允许系统提示的文件和网络访问权限；后续运行直接读取保存内容。
 4. 指令查询今日签到状态，未签到则签到并查询确认；再查询任务，仅对最新状态为可领取的任务领取奖励，每次提交后再次查询确认。
 

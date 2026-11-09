@@ -80,7 +80,7 @@ def run(helper, config, root, check_only=False, report=None, allow_sign=True, al
         if confirmed:
             guard.unlink()
         else:
-            raise helper.ApiError('上次提交的结果仍未确认，已禁止继续提交。请在官方 App 核实，并在暂停该账号计划并联系管理员核实待确认记录。', 'unconfirmed')
+            raise helper.ApiError('上次提交的结果仍未确认。请前往账号管理更新 token；成功保存后将解除待确认限制，再执行时会重新查询任务状态。', 'unconfirmed')
     if check_only:
         return 0
 
@@ -97,7 +97,9 @@ def run(helper, config, root, check_only=False, report=None, allow_sign=True, al
             if not confirm():
                 raise helper.ApiError('接口返回成功，但刷新后的状态未确认成功', 'unconfirmed')
         except Exception as exc:
-            report['errors'].append(error_info(exc, report['stage']))
+            info = error_info(exc, report['stage'])
+            info['summary'] += '。请前往账号管理更新 token 后重试。'
+            report['errors'].append(info)
             if action == 'sign':
                 report['sign'] = 'failed'
             return False

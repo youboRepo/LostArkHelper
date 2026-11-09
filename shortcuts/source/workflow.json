@@ -2,7 +2,7 @@
   "WFWorkflowClientVersion": "4040",
   "WFWorkflowMinimumClientVersion": 900,
   "WFWorkflowMinimumClientVersionString": "900",
-  "WFWorkflowName": "LostArkHelper-iPhone-v0.2.0",
+  "WFWorkflowName": "LostArkHelper-iPhone-v0.3.2",
   "WFWorkflowActions": [
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.comment",
@@ -299,8 +299,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]token=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]token=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "1342FD65-88FB-4282-9F3E-FBDC04518215",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -490,8 +490,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]userId=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]userId=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "C4B147C1-EE4F-43E2-9288-4C22E62015D1",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -681,8 +681,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]appOpenid=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]appOpenid=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "E0A1BD71-A4A7-47B9-8373-0C6187D789E2",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -872,8 +872,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]appid=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]appid=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "A6809FBD-D70B-47D1-8BF9-A68C26215882",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1063,8 +1063,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]roleId=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]roleId=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "037EFAAE-CD39-451C-95A2-187F06D86386",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1254,8 +1254,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]serverId=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]serverId=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "AEDAA304-A928-41BC-8369-0D64668F4456",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1445,8 +1445,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]areaId=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]areaId=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "01B44436-1122-4A07-9791-0768DE8107CD",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1636,8 +1636,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]uin=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]uin=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "189371F1-88FF-4DA1-8462-814A12544047",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -1827,8 +1827,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]acctype=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]acctype=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "FCD798AC-712E-49CB-B357-340FDFBBE616",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -3098,8 +3098,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]accessToken=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]accessToken=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "63CD3355-86E7-47D3-9B23-9B3D307AF1AB",
         "text": {
           "WFSerializationType": "WFTextTokenString",
@@ -3289,8 +3289,8 @@
     {
       "WFWorkflowActionIdentifier": "is.workflow.actions.text.match",
       "WFWorkflowActionParameters": {
-        "WFMatchTextPattern": "(?<=[?&]access_token=)[^&#]*",
-        "WFMatchTextCaseSensitive": true,
+        "WFMatchTextPattern": "(?i)(?<=[?&]access_token=)[^&#]*",
+        "WFMatchTextCaseSensitive": false,
         "UUID": "95B1A3EA-E3A6-4A02-B901-A67C0DE5B2FB",
         "text": {
           "WFSerializationType": "WFTextTokenString",

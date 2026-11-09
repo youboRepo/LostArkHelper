@@ -204,8 +204,13 @@ class Handler(BaseHTTPRequestHandler):
                     if any(str(old['form'].get(k)) != str(config['form'].get(k)) for k in ('user_id', 'openid', 'sRoleld')):
                         return self.reply(409, {'error': '仅支持更新同一游戏账号和角色的 token，不能在此切换账号。'})
                 save_state(file, config)
+                # 已持有该账号的操作锁，且凭据保存成功；允许用新凭据重新查询后执行。
+                # 校验失败、身份不符或写入失败时不会执行到这里，原待确认记录仍保留。
+                pending = root / 'pending-operation.json'
+                recovered = pending.exists()
+                pending.unlink(missing_ok=True)
                 names = ' / '.join(str(info.get(k) or '未提供')[:100] for k in ('area', 'server', 'role'))
-                return self.reply(200, {'message': '我的 token 已保存：' + names + '。请先查询核对，再启用定时任务。'})
+                return self.reply(200, {'message': '我的 token 已保存：' + names + ('。待确认限制已解除，下次执行将重新查询签到和任务状态。' if recovered else '。请先查询核对，再启用定时任务。'), 'pending_cleared': recovered})
             if path not in ('/api/sign', '/api/claim', '/api/run'):
                 return self.reply(404, {'error': 'not found'})
             if not (root / 'config-dashboard.json').exists():
