@@ -1,6 +1,7 @@
 """Private SQLite scheduling settings and append-only execution history."""
 from contextlib import contextmanager
 import json
+import secrets
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -20,6 +21,9 @@ def connect(root):
         CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS runs (id INTEGER PRIMARY KEY, slot TEXT UNIQUE, started TEXT NOT NULL,
           finished TEXT, outcome TEXT NOT NULL, details TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS account_state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS mail_deliveries (
+          run_id INTEGER PRIMARY KEY, state TEXT NOT NULL, reason TEXT NOT NULL DEFAULT '');
     ''')
     # sqlite3.Connection 的 with 只提交/回滚，不会 close。
     # 显式关闭连接，释放文件句柄，不能依赖垃圾回收。
@@ -53,6 +57,19 @@ def settings(root, value=None):
         row = db.execute('SELECT value FROM settings WHERE id=1').fetchone()
     return json.loads(row['value']) if row else dict(DEFAULT)
 
+
+def token_imported(root, first_import):
+    """首次成功导入选择一次随机分钟；更新旧凭据不覆盖已有计划。调用方持账号锁。"""
+    with connect(root) as db:
+        db.execute('BEGIN IMMEDIATE')
+        initialized = db.execute("SELECT 1 FROM account_state WHERE key='token_imported'").fetchone()
+        changed = first_import and not initialized
+        if changed:
+            value = dict(DEFAULT, enabled=True, minute=secrets.randbelow(60))
+            db.execute('INSERT OR REPLACE INTO settings VALUES (1,?)', (json.dumps(value),))
+        db.execute("INSERT OR IGNORE INTO account_state VALUES ('token_imported','1')")
+    return changed
+
 # 用于页面显示下一次计划时间，不负责实际启动任务。
 def next_run(value, at=None):
     if not value['enabled']:
@@ -74,7 +91,9 @@ def due(value, at):
 # 按记录 ID 倒序分页，每页最多 30 条，不返回游戏凭据。
 def history(root, before=None):
     with connect(root) as db:
-        rows = db.execute('SELECT * FROM runs WHERE id < ? ORDER BY id DESC LIMIT 31',
+        rows = db.execute('SELECT runs.*,mail_deliveries.state AS email_status,mail_deliveries.reason AS email_reason '
+                          'FROM runs LEFT JOIN mail_deliveries ON runs.id=mail_deliveries.run_id '
+                          'WHERE runs.id < ? ORDER BY runs.id DESC LIMIT 31',
                           (before or 9223372036854775807,)).fetchall()
     items = [dict(row, details=json.loads(row['details'])) for row in rows[:30]]
     return {'items': items, 'next': items[-1]['id'] if len(rows) > 30 else None}

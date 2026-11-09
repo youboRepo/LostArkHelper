@@ -9,8 +9,8 @@ from pathlib import Path
 
 
 class OperationLock:
-    def __init__(self, root):
-        self.path = Path(root) / 'operations.lock'
+    def __init__(self, root, filename='operations.lock'):
+        self.path = Path(root) / filename
         self.thread_lock = threading.Lock()
         self.fd = None
 
@@ -153,9 +153,24 @@ def error_info(exc, stage):
 
 
 # 账号级调度入口：持锁、检查到期、按时间槽去重、读取配置，最后持久化脱敏运行结果。
-def execute_user(root, helper, check_only=False, run_now=False):
-    lock = OperationLock(root)
+def finish_run(root, run_id, report, outcome, notify=None):
+    # 先提交游戏执行结果，再独立尝试邮件；邮件失败不能导致再次提交游戏请求。
+    store.update(root, run_id, report, outcome)
+    if notify is not None:
+        try:
+            notify(run_id, report, outcome)
+        except Exception:
+            print('Email notification unavailable; game execution result retained.', flush=True)
+
+
+def execute_user(root, helper, check_only=False, run_now=False, notify=None, account=None):
+    import auth
+    lock = auth.operation_lock(*account) if account else OperationLock(root)
     if not lock.acquire():
+        if account:
+            # 可能正被删除，此时不能绕过锁访问或创建账号数据库。
+            print('SKIP: another account operation is running.', flush=True)
+            return 0
         at = store.now()
         if store.due(store.settings(root), at):
             with store.connect(root) as db:
@@ -166,30 +181,34 @@ def execute_user(root, helper, check_only=False, run_now=False):
     run_id = None
     report = {'check_only': check_only, 'trigger': 'scheduled_now' if run_now else 'scheduled'}
     try:
+        if account and (not auth.user_exists(*account) or not root.is_dir()):
+            return 0
         at = store.now()
         schedule = store.settings(root)
-        if not check_only and not run_now and not store.due(schedule, at):
+        if not check_only and (not schedule['enabled'] or (not run_now and not store.due(schedule, at))):
+            return 0
+        config_path = root / 'config-dashboard.json'
+        if check_only and not config_path.exists():
             return 0
         slot = at.strftime('%Y-%m-%dT%H:%M') if not check_only and not run_now else None
         run_id = store.begin(root, slot)
         if run_id is None:
             return 0
         report['run_id'] = run_id
-        config_path = root / 'config-dashboard.json'
         if not config_path.exists():
             report['message'] = '未导入面板账号，已跳过。'
             store.update(root, run_id, report, 'skipped')
             return 0
         config = json.loads(config_path.read_text(encoding='utf-8'))
         code = run(helper, config, root, check_only, report)
-        store.update(root, run_id, report, 'success' if code == 0 else 'error')
+        finish_run(root, run_id, report, 'success' if code == 0 else 'error', notify)
         return code
     except Exception as exc:
         error = error_info(exc, report.get('stage', '读取账号配置'))
         report.setdefault('errors', []).append(error)
         report['message'] = '；'.join(e['summary'] for e in report['errors'])
         if run_id:
-            store.update(root, run_id, report, 'error')
+            finish_run(root, run_id, report, 'error', notify)
         print('ERROR: query/write failed; see private execution history. No immediate retry.', flush=True)
         return 1
     finally:
@@ -200,6 +219,7 @@ def main():
     import argparse
     import helper
     import auth
+    import notifications
     from concurrent.futures import ThreadPoolExecutor
     parser = argparse.ArgumentParser()
     parser.add_argument('--check-only', action='store_true')
@@ -209,14 +229,11 @@ def main():
     os.umask(0o077)
     auth.initialize(root)
     users = auth.all_users(root)
-    at = store.now()
-    roots = [auth.user_root(root, user) for user in users]
-    # Disabled/new accounts never query the game API. Bound concurrent API work.
-    roots = [path for path in roots if store.due(store.settings(path), at) or
-             (args.run_now and store.settings(path)['enabled']) or
-             (args.check_only and (path / 'config-dashboard.json').exists())]
+    accounts = [(user, auth.user_root(root, user, create=False)) for user in users]
+    # 在账号锁内判断到期和账号是否仍存在，避免列表快照中的已删除账号继续执行。
     with ThreadPoolExecutor(max_workers=4) as pool:
-        results = list(pool.map(lambda path: execute_user(path, helper, args.check_only, args.run_now), roots))
+        results = list(pool.map(lambda pair: execute_user(pair[1], helper, args.check_only, args.run_now,
+                            notifications.callback(root, pair[0], pair[1]), account=(root, pair[0])), accounts))
     return 1 if any(code for code in results) else 0
 
 

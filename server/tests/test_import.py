@@ -13,6 +13,7 @@ from http.server import ThreadingHTTPServer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'service'))
 import app
+import auth
 import automation
 import helper
 import import_link
@@ -81,7 +82,8 @@ class ImportTests(unittest.TestCase):
             configured = [True]
             stack.enter_context(patch.object(app, 'ROOT', root))
             login = stack.enter_context(patch.object(helper, 'validate_login', return_value=None))
-            stack.enter_context(patch.object(app.Handler, 'current_user', return_value=dict(id=1, username='test', legacy=1)))
+            user = auth.create_user(root, 'test', 'PrivateTestPassword123', legacy=True)
+            stack.enter_context(patch.object(app.Handler, 'current_user', return_value=user))
             stack.enter_context(patch.object(app, 'read_config', side_effect=lambda _: saved[0]))
             (root/'config-dashboard.json').write_text(json.dumps(original))
             save = stack.enter_context(patch.object(app, 'save_state'))

@@ -8,11 +8,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlsplit, parse_qs
-from automation import OperationLock, run, save_state, error_info
+from automation import OperationLock, run, save_state, error_info, finish_run
 import store
 import auth
 import helper
 import import_link as importer
+import admin
+import notifications
 
 ROOT = Path(os.environ.get('ARK_HELPER_DIR', '/var/lib/ark-dashboard'))
 STATIC = Path(os.environ.get('ARK_STATIC_DIR', '/opt/lostark-dashboard/dist'))
@@ -104,23 +106,49 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith('/api/'):
             user = self.current_user()
             if path == '/api/auth/me':
-                return self.reply(200, {'user': {'username': user['username']} if user else None})
+                return self.reply(200, {'user': auth.public_user(user)})
             if not user:
                 return self.reply(401, {'error': '请先登录。'})
-            root = auth.user_root(ROOT, user)
-            if path == '/api/schedule':
-                value = store.settings(root)
-                return self.reply(200, dict(value, timezone='Asia/Shanghai', next_run=store.next_run(value)))
-            if path == '/api/history':
-                try:
-                    before = int(parse_qs(urlsplit(self.path).query).get('before', ['0'])[0])
-                    if before < 0: raise ValueError()
-                except ValueError:
-                    return self.reply(400, {'error': '分页参数无效'})
-                return self.reply(200, store.history(root, before))
-            if path == '/api/status':
-                return self.reply(200, status(root))
-            return self.reply(404, {'error': 'not found'})
+            if path.startswith('/api/admin/'):
+                if not user.get('is_admin'):
+                    return self.reply(403, {'error': '仅管理员可访问此功能。'})
+                if path == '/api/admin/users':
+                    try:
+                        query = parse_qs(urlsplit(self.path).query)
+                        limit, offset = int(query.get('limit', ['30'])[0]), int(query.get('offset', ['0'])[0])
+                        if not 1 <= limit <= 100 or not 0 <= offset <= 1000000:
+                            raise ValueError()
+                    except ValueError:
+                        return self.reply(400, {'error': '分页参数无效。'})
+                    return self.reply(200, admin.users(ROOT, limit, offset, actor=user))
+                if path == '/api/admin/mail':
+                    return self.reply(200, notifications.public_mail(ROOT))
+                return self.reply(404, {'error': 'not found'})
+            lock = auth.operation_lock(ROOT, user)
+            if not lock.acquire():
+                return self.reply(409, {'error': '你的账号已有操作正在进行，请稍后再试。'})
+            try:
+                if not auth.user_exists(ROOT, user):
+                    return self.reply(401, {'error': '账号已删除，请重新登录。'})
+                root = auth.user_root(ROOT, user)
+                if path == '/api/notifications':
+                    return self.reply(200, dict(auth.notification_preferences(ROOT, user),
+                                              mail_ready=notifications.public_mail(ROOT)['ready']))
+                if path == '/api/schedule':
+                    value = store.settings(root)
+                    return self.reply(200, dict(value, timezone='Asia/Shanghai', next_run=store.next_run(value)))
+                if path == '/api/history':
+                    try:
+                        before = int(parse_qs(urlsplit(self.path).query).get('before', ['0'])[0])
+                        if before < 0: raise ValueError()
+                    except ValueError:
+                        return self.reply(400, {'error': '分页参数无效'})
+                    return self.reply(200, store.history(root, before))
+                if path == '/api/status':
+                    return self.reply(200, status(root))
+                return self.reply(404, {'error': 'not found'})
+            finally:
+                lock.release()
         if path in ('/', '/login', '/register'):
             path = '/index.html'
         if '..' in path or not (path == '/index.html' or path.startswith('/assets/')):
@@ -164,8 +192,16 @@ class Handler(BaseHTTPRequestHandler):
             if path.endswith('register'):
                 try:
                     user = auth.create_user(ROOT, username, password)
-                    root = auth.user_root(ROOT, user)
-                    store.settings(root, dict(store.DEFAULT))
+                    setup_lock = auth.operation_lock(ROOT, user)
+                    if not setup_lock.acquire():
+                        return self.reply(409, {'error': '账号正在处理其他操作，请稍后重新登录。'})
+                    try:
+                        if not auth.user_exists(ROOT, user):
+                            return self.reply(409, {'error': '注册期间账号已被管理员删除。'})
+                        root = auth.user_root(ROOT, user)
+                        store.settings(root, dict(store.DEFAULT))
+                    finally:
+                        setup_lock.release()
                 except ValueError as exc:
                     return self.reply(400, {'error': str(exc)})
                 # Registration does not create a logged-in session.
@@ -173,19 +209,53 @@ class Handler(BaseHTTPRequestHandler):
             user = auth.authenticate(ROOT, username, password)
             if not user:
                 return self.reply(401, {'error': '用户名或密码错误。'})
-            token = auth.new_session(ROOT, user)
-            return self.reply(200, {'user': {'username': user['username']}}, self.cookie(token))
+            try:
+                token = auth.new_session(ROOT, user)
+            except ValueError:
+                return self.reply(401, {'error': '账号已删除，请重新登录。'})
+            return self.reply(200, {'user': auth.public_user(user)}, self.cookie(token))
         user = self.current_user()
         if not user:
             return self.reply(401, {'error': '请先登录。'})
         if path == '/api/auth/logout':
             auth.logout(ROOT, self.session_token())
             return self.reply(200, {'message': '已退出登录。'}, self.cookie('', expires=True))
-        root = auth.user_root(ROOT, user)
-        lock = OperationLock(root)
+        if path.startswith('/api/admin/') and not user.get('is_admin'):
+            return self.reply(403, {'error': '仅管理员可访问此功能。'})
+        lock = auth.operation_lock(ROOT, user)
         if not lock.acquire():
             return self.reply(409, {'error': '你的账号已有操作正在进行，请稍后再试。'})
         try:
+            if not auth.user_exists(ROOT, user):
+                return self.reply(401, {'error': '账号已删除，请重新登录。'})
+            if path == '/api/admin/users/delete':
+                try:
+                    value = admin.delete_user(ROOT, user, obj)
+                except admin.DeleteError as exc:
+                    return self.reply(exc.status, {'error': str(exc)})
+                return self.reply(200, value)
+            if path.startswith('/api/admin/'):
+                if path != '/api/admin/mail':
+                    return self.reply(404, {'error': 'not found'})
+                mail_lock = OperationLock(ROOT)
+                if not mail_lock.acquire():
+                    return self.reply(409, {'error': '管理员设置正在被使用，请稍后重试。'})
+                try:
+                    try:
+                        value = notifications.save_mail(ROOT, obj)
+                    except ValueError as exc:
+                        return self.reply(400, {'error': str(exc)})
+                    return self.reply(200, dict(value, message='QQ 发信设置已保存；授权码不会回显。'))
+                finally:
+                    mail_lock.release()
+            root = auth.user_root(ROOT, user)
+            if path == '/api/notifications':
+                try:
+                    value = notifications.validate_preferences(obj)
+                except ValueError as exc:
+                    return self.reply(400, {'error': str(exc)})
+                auth.notification_preferences(ROOT, user, value)
+                return self.reply(200, dict(value, message='异常邮件提醒设置已保存。'))
             if path == '/api/schedule':
                 try:
                     value = store.settings(root, obj)
@@ -196,7 +266,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(obj.get('url'), str):
                     return self.reply(400, {'error': '请填写分享链接。'})
                 file = root / 'config-dashboard.json'
-                if file.exists() and obj.get('replace') is not True:
+                configured = file.exists()
+                if configured and obj.get('replace') is not True:
                     return self.reply(409, {'error': '已有 token，请勾选确认更新后再提交。'})
                 try:
                     config, info = importer.parse_link(obj['url'])
@@ -213,13 +284,23 @@ class Handler(BaseHTTPRequestHandler):
                     return self.reply(400 if exc.kind in ('auth_invalid', 'auth_mismatch') else 503,
                                       {'error': str(exc), 'needs_token_update': exc.kind in ('auth_invalid', 'auth_mismatch')})
                 save_state(file, config)
+                try:
+                    initialized = store.token_imported(root, first_import=not configured)
+                except Exception:
+                    # 首次计划落盘失败时撤回本次首次配置，重试仍可完整初始化。
+                    if not configured:
+                        file.unlink(missing_ok=True)
+                    raise
                 # 已持有该账号的操作锁，且凭据保存成功；允许用新凭据重新查询后执行。
                 # 校验失败、身份不符或写入失败时不会执行到这里，原待确认记录仍保留。
                 pending = root / 'pending-operation.json'
                 recovered = pending.exists()
                 pending.unlink(missing_ok=True)
                 names = ' / '.join(str(info.get(k) or '未提供')[:100] for k in ('area', 'server', 'role'))
-                return self.reply(200, {'message': '我的 token 已保存：' + names + ('。待确认限制已解除，下次执行将重新查询签到和任务状态。' if recovered else '。请先查询核对，再启用定时任务。'), 'pending_cleared': recovered})
+                schedule = store.settings(root)
+                plan = '。已自动开启每小时第 {} 分钟执行，可在定时设置修改。'.format(schedule['minute']) if initialized else '。定时计划保持原设置。'
+                return self.reply(200, {'message': '我的 token 已保存：' + names + plan + ('待确认限制已解除，下次执行将重新查询签到和任务状态。' if recovered else ''),
+                                        'pending_cleared': recovered, 'schedule_initialized': initialized})
             if path not in ('/api/sign', '/api/claim', '/api/run'):
                 return self.reply(404, {'error': 'not found'})
             if not (root / 'config-dashboard.json').exists():
@@ -230,13 +311,14 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 code = run(helper, read_config(root), root, report=report,
                            allow_sign=path in ('/api/sign', '/api/run'), allow_claim=path in ('/api/claim', '/api/run'))
-                store.update(root, run_id, report, 'success' if code == 0 else 'error')
-                return self.reply(200 if code == 0 else 409, {'message': ('执行成功：' + ('本次签到成功' if report.get('sign') == 'signed_now' else '今日已签到，跳过签到') + '；领取奖励 {} 项。'.format(len(report.get('claimed', [])))) if code == 0 else report.get('message', '执行失败，请查看运行记录。')})
             except Exception as exc:
                 report.setdefault('errors', []).append(error_info(exc, report.get('stage', '手动操作')))
                 report['message'] = '；'.join(e['summary'] for e in report['errors'])
-                store.update(root, run_id, report, 'error')
+                finish_run(root, run_id, report, 'error', notifications.callback(ROOT, user, root))
                 return self.reply(500, {'error': report['message']})
+            finish_run(root, run_id, report, 'success' if code == 0 else 'error', notifications.callback(ROOT, user, root))
+            # 响应写回失败不应把已确认的游戏成功改记为失败、再触发异常邮件。
+            return self.reply(200 if code == 0 else 409, {'message': ('执行成功：' + ('本次签到成功' if report.get('sign') == 'signed_now' else '今日已签到，跳过签到') + '；领取奖励 {} 项。'.format(len(report.get('claimed', [])))) if code == 0 else report.get('message', '执行失败，请查看运行记录。')})
         finally:
             lock.release()
 

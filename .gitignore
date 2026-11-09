@@ -5,6 +5,7 @@
 **/*.dpapi
 **/config-dashboard.json
 **/panel.key
+**/mail-settings.json
 shortcuts/build/
 windows/release/
 **/.DS_Store
